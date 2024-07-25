@@ -1,9 +1,11 @@
 import streamlit as st
 from pathlib import Path
 import google.generativeai as genai
+import pyttsx3
 
-st.set_page_config(page_title="VitalImage Analytics", page_icon=":robot:")
+st.set_page_config(page_title="Currency Detection", page_icon=":robot:")
 st.image(r"image.png", width=150)
+
 # Configure your API key
 try:
     from api_keys import api_key
@@ -44,27 +46,19 @@ safety_settings = [
 ]
 
 system_prompt = """
-As a highly skilled medical practitioner specializing in image analysis, you are tasked with examining medical images for a renowned hospital. Your expertise is crucial in identifying any anomalies, diseases, or health issues that may be present in the image.
-
-Your responsibilities include:
-
-1. Detailed Analysis: Thoroughly analyze each image, focusing on identifying any abnormal findings.
-2. Findings Report: Document all observed anomalies or signs of disease. Clearly articulate these findings in a structured format.
-3. Recommendations and Next Steps: Based on your analysis, suggest potential next steps, including further tests or treatments as applicable.
-4. Treatment Suggestions: If appropriate, recommend possible treatment options or intervention.
-
-Important Notes:
-
-1. Scope of Response: Only respond if the image pertains to human health issues. 
-2. Clarity of Image: In cases where the image quality impedes clear analysis, note that certain aspects are 'Unable to be determined based on the provided image.'
-3. Disclaimer: Accompany your analysis with the disclaimer: "Consult with a Doctor before making any decisions."
-
-Your insights are invaluable in guiding clinical decisions. Please proceed with the analysis, adhering to the structured approach outlined above.
+### Currency Note Analysis
+I'll analyze the uploaded image and provide insights on the currency note.
+Indian Notes
+Also give all four points in the following languages like english marathi hindi gujarati kannada
+Also identify if note is counterfeit or not
+and give output :- 
+1. if Original give original or if fake give fake
+2. If original Then amount with serial number
 """
 
 try:
     model = genai.GenerativeModel(
-        model_name="gemini-pro-vision",
+        model_name="gemini-1.5-flash",
         generation_config=generation_config,
         safety_settings=safety_settings
     )
@@ -72,8 +66,7 @@ except Exception as e:
     st.error(f"Error initializing GenerativeModel: {e}")
     st.stop()
 
-
-uploaded_file = st.file_uploader("Upload the medical image for analysis", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Upload the currency note image for analysis", type=["png", "jpg", "jpeg"])
 submit_button = st.button("Generate the Analysis")
 
 if submit_button:
@@ -98,9 +91,13 @@ if submit_button:
             # Generate response based on prompt and image
             try:
                 response = model.generate_content(prompt_parts)
-                st.write(response.text)
-            except genai.ApiException as e:
-                st.error(f"API error: {e.status_code} - {e.message}")
+                analysis_text = response.text
+                st.write(analysis_text)
+                
+                # Convert text to speech
+                engine = pyttsx3.init()
+                engine.say(analysis_text)
+                engine.runAndWait()
             except Exception as e:
                 st.error(f"Unexpected error: {e}")
         except Exception as e:
